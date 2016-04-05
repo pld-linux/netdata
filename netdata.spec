@@ -12,8 +12,11 @@ Group:		Applications/System
 Source0:	https://github.com/firehol/netdata/archive/v%{version}/%{name}-%{version}.tar.gz
 # Source0-md5:	53a432f8849da6bd49b0853dd79551c5
 URL:		http://netdata.firehol.org/
+BuildRequires:	autoconf
+BuildRequires:	automake
 BuildRequires:	libmnl-devel
 %{?with_nfacct:BuildRequires:	libnetfilter_acct-devel}
+BuildRequires:	pkgconfig
 BuildRequires:	zlib-devel
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
