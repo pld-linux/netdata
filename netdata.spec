@@ -6,7 +6,7 @@
 Summary:	Linux real time system monitoring, over the web
 Name:		netdata
 Version:	1.0.0
-Release:	0.2
+Release:	0.3
 License:	GPL v3+
 Group:		Applications/System
 Source0:	https://github.com/firehol/netdata/archive/v%{version}/%{name}-%{version}.tar.gz
@@ -17,7 +17,16 @@ BuildRequires:	automake
 BuildRequires:	libmnl-devel
 %{?with_nfacct:BuildRequires:	libnetfilter_acct-devel}
 BuildRequires:	pkgconfig
+BuildRequires:	rpmbuild(macros) >= 1.202
 BuildRequires:	zlib-devel
+Provides:	group(netdata)
+Provides:	user(netdata)
+Requires(postun):	/usr/sbin/groupdel
+Requires(postun):	/usr/sbin/userdel
+Requires(pre):	/bin/id
+Requires(pre):	/usr/bin/getgid
+Requires(pre):	/usr/sbin/groupadd
+Requires(pre):	/usr/sbin/useradd
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
 %description
@@ -55,11 +64,17 @@ rm -rf $RPM_BUILD_ROOT
 install -d $RPM_BUILD_ROOT%{systemdunitdir}
 cp -p system/netdata-systemd $RPM_BUILD_ROOT%{systemdunitdir}/netdata.service
 
-%if 0
 %pre
-%groupadd -r netdata
-%useradd -r -g netdata -c netdata -s /sbin/nologin -d / netdata
+%groupadd -g 329 netdata
+%useradd -u 329 -g netdata -c netdata -s /sbin/nologin -d / netdata
 
+%postun
+if [ "$1" = "0" ]; then
+	%userremove netdata
+	%groupremove netdata
+fi
+
+%if 0
 %post
 %systemd_post netdata.service
 
