@@ -14,7 +14,7 @@ Source0:	https://github.com/firehol/netdata/archive/v%{version}/%{name}-%{versio
 URL:		http://netdata.firehol.org/
 BuildRequires:	autoconf
 BuildRequires:	automake
-BuildRequires:	libmnl-devel
+%{?with_nfacct:BuildRequires:	libmnl-devel}
 %{?with_nfacct:BuildRequires:	libnetfilter_acct-devel}
 BuildRequires:	pkgconfig
 BuildRequires:	rpmbuild(macros) >= 1.202
