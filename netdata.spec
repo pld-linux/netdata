@@ -7,7 +7,7 @@ Summary:	Linux real time system monitoring, over the web
 Name:		netdata
 Version:	1.0.0
 Release:	0.2
-License:	GPL v2+
+License:	GPL v3+
 Group:		Applications/System
 Source0:	https://github.com/firehol/netdata/archive/v%{version}/%{name}-%{version}.tar.gz
 # Source0-md5:	53a432f8849da6bd49b0853dd79551c5
