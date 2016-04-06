@@ -6,11 +6,12 @@
 Summary:	Linux real time system monitoring, over the web
 Name:		netdata
 Version:	1.0.0
-Release:	0.3
+Release:	0.4
 License:	GPL v3+
 Group:		Applications/System
 Source0:	https://github.com/firehol/netdata/archive/v%{version}/%{name}-%{version}.tar.gz
 # Source0-md5:	53a432f8849da6bd49b0853dd79551c5
+Source1:	%{name}.conf
 URL:		http://netdata.firehol.org/
 BuildRequires:	autoconf
 BuildRequires:	automake
@@ -58,6 +59,8 @@ happened, on your systems and applications.
 rm -rf $RPM_BUILD_ROOT
 %{__make} install \
 	DESTDIR=$RPM_BUILD_ROOT
+
+install -p %{SOURCE1} $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/%{name}.conf
 
 %{__rm} $RPM_BUILD_ROOT/var/{cache,log}/netdata/.keep
 
