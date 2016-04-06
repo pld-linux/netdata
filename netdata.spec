@@ -6,7 +6,7 @@
 Summary:	Linux real time system monitoring, over the web
 Name:		netdata
 Version:	1.0.0
-Release:	0.9
+Release:	0.10
 License:	GPL v3+
 Group:		Applications/System
 Source0:	https://github.com/firehol/netdata/archive/v%{version}/%{name}-%{version}.tar.gz
@@ -21,6 +21,7 @@ BuildRequires:	automake
 BuildRequires:	pkgconfig
 BuildRequires:	rpmbuild(macros) >= 1.202
 BuildRequires:	zlib-devel
+Suggests:	%{name}-charts
 Suggests:	%{name}-nodejs
 Provides:	group(netdata)
 Provides:	user(netdata)
@@ -43,6 +44,28 @@ queries, API calls, web site visitors, etc.
 netdata tries to visualize the truth of now, in its greatest detail,
 so that you can get insights of what is happening now and what just
 happened, on your systems and applications.
+
+%package charts
+Summary:	netdata charts plugin
+Group:		Applications/System
+URL:		https://github.com/firehol/netdata/wiki/General-Info---charts.d
+Requires:	%{name} = %{version}-%{release}
+Requires:	bash >= 4
+%if "%{_rpmversion}" >= "5"
+BuildArch:	noarch
+%endif
+
+%description charts
+Charts.d is BaSH script that allows you to write simple scripts for
+collecting data.
+
+It has been designed so that the actual script that will do data
+collection will be permanently in memory, collecting data with as
+little overheads as possible (i.e. initialize once, repeatedly collect
+values with minimal overhead).
+
+Charts.d looks for scripts in charts.d. The scripts should have the
+filename suffix: .chart.sh.
 
 %package nodejs
 Summary:	netdata node.js plugins
@@ -125,10 +148,17 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755,netdata,netdata) %dir %{_localstatedir}/log/%{name}
 
 %defattr(-,root,root,-)
-%{_libexecdir}/%{name}/charts.d
 %{_libexecdir}/%{name}/plugins.d
-# nodejs subpackage
+# subpackages
 %exclude %{_libexecdir}/%{name}/plugins.d/node.d.plugin
+%exclude %{_libexecdir}/%{name}/plugins.d/charts.d*
+
+%files charts
+%defattr(644,root,root,755)
+%attr(755,root,root) %{_libexecdir}/%{name}/plugins.d/charts.d*
+%dir %{_libexecdir}/%{name}/charts.d
+%{_libexecdir}/%{name}/charts.d/README.md
+%attr(755,root,root) %{_libexecdir}/%{name}/charts.d/*.chart.sh
 
 %files nodejs
 %defattr(644,root,root,755)
