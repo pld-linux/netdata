@@ -6,7 +6,7 @@
 Summary:	Linux real time system monitoring, over the web
 Name:		netdata
 Version:	1.0.0
-Release:	0.10
+Release:	0.12
 License:	GPL v3+
 Group:		Applications/System
 Source0:	https://github.com/firehol/netdata/archive/v%{version}/%{name}-%{version}.tar.gz
@@ -139,7 +139,8 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(644,root,root,755)
 %dir %{_sysconfdir}/%{name}
-%config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/*.conf
+%config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/apps_groups.conf
+%config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/netdata.conf
 %attr(755,root,root) %{_sbindir}/%{name}
 %{_datadir}/%{name}
 %dir %{_libexecdir}/%{name}
@@ -155,6 +156,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %files charts
 %defattr(644,root,root,755)
+%config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/charts.d.conf
 %attr(755,root,root) %{_libexecdir}/%{name}/plugins.d/charts.d*
 %dir %{_libexecdir}/%{name}/charts.d
 %{_libexecdir}/%{name}/charts.d/README.md
