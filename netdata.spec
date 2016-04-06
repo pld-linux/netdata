@@ -6,7 +6,7 @@
 Summary:	Linux real time system monitoring, over the web
 Name:		netdata
 Version:	1.0.0
-Release:	0.4
+Release:	0.7
 License:	GPL v3+
 Group:		Applications/System
 Source0:	https://github.com/firehol/netdata/archive/v%{version}/%{name}-%{version}.tar.gz
@@ -20,6 +20,7 @@ BuildRequires:	automake
 BuildRequires:	pkgconfig
 BuildRequires:	rpmbuild(macros) >= 1.202
 BuildRequires:	zlib-devel
+Suggests:	%{name}-nodejs
 Provides:	group(netdata)
 Provides:	user(netdata)
 Requires(postun):	/usr/sbin/groupdel
@@ -29,6 +30,8 @@ Requires(pre):	/usr/bin/getgid
 Requires(pre):	/usr/sbin/groupadd
 Requires(pre):	/usr/sbin/useradd
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
+
+%define		_libexecdir	%{_prefix}/lib
 
 %description
 netdata is the fastest way to visualize metrics. It is a resource
@@ -40,6 +43,23 @@ netdata tries to visualize the truth of now, in its greatest detail,
 so that you can get insights of what is happening now and what just
 happened, on your systems and applications.
 
+%package nodejs
+Summary:	netdata node.js plugins
+Group:		Applications/System
+URL:		https://github.com/firehol/netdata/wiki/General-Info---node.d
+Requires:	%{name} = %{version}-%{release}
+Requires:	nodejs
+%if "%{_rpmversion}" >= "5"
+BuildArch:	noarch
+%endif
+
+%description nodejs
+node.d.plugin is a netdata plugin that provides an abstraction layer
+to allow easy and quick development of data collectors in node.js. It
+also manages all its data collectors (placed in node.d) using a single
+instance of node, thus lowering the memory footprint of data
+collection.
+
 %prep
 %setup -q
 
@@ -49,6 +69,7 @@ happened, on your systems and applications.
 %{__autoheader}
 %{__automake}
 %configure \
+	--libdir=%{_libexecdir} \
 	--with-zlib \
 	--with-math \
 	%{__enable_disable nfacct plugin-nfacct} \
@@ -60,7 +81,7 @@ rm -rf $RPM_BUILD_ROOT
 %{__make} install \
 	DESTDIR=$RPM_BUILD_ROOT
 
-install -p %{SOURCE1} $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/%{name}.conf
+cp -p %{SOURCE1} $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/%{name}.conf
 
 %{__rm} $RPM_BUILD_ROOT/var/{cache,log}/netdata/.keep
 
@@ -104,5 +125,11 @@ rm -rf $RPM_BUILD_ROOT
 
 %defattr(-,root,root,-)
 %{_libexecdir}/%{name}/charts.d
-%{_libexecdir}/%{name}/node.d
 %{_libexecdir}/%{name}/plugins.d
+
+%files nodejs
+%defattr(644,root,root,755)
+%dir %{_libexecdir}/%{name}/node.d
+%{_libexecdir}/%{name}/node.d/README.md
+%{_libexecdir}/%{name}/node.d/node_modules
+%attr(755,root,root) %{_libexecdir}/%{name}/node.d/*.node.js
