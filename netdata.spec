@@ -6,7 +6,7 @@
 Summary:	Linux real time system monitoring, over the web
 Name:		netdata
 Version:	1.0.0
-Release:	0.7
+Release:	0.8
 License:	GPL v3+
 Group:		Applications/System
 Source0:	https://github.com/firehol/netdata/archive/v%{version}/%{name}-%{version}.tar.gz
@@ -126,9 +126,12 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root,-)
 %{_libexecdir}/%{name}/charts.d
 %{_libexecdir}/%{name}/plugins.d
+# nodejs subpackage
+%exclude %{_libexecdir}/%{name}/plugins.d/node.d.plugin
 
 %files nodejs
 %defattr(644,root,root,755)
+%attr(755,root,root) %{_libexecdir}/%{name}/plugins.d/node.d.plugin
 %dir %{_libexecdir}/%{name}/node.d
 %{_libexecdir}/%{name}/node.d/README.md
 %{_libexecdir}/%{name}/node.d/node_modules
