@@ -1,17 +1,18 @@
 #
 # Conditional build:
-%bcond_without	systemd		# systemd
 %bcond_with	nfacct		# build with nfacct plugin
 
 Summary:	Linux real time system monitoring, over the web
 Name:		netdata
 Version:	1.0.0
-Release:	0.12
+Release:	0.15
 License:	GPL v3+
 Group:		Applications/System
 Source0:	https://github.com/firehol/netdata/archive/v%{version}/%{name}-%{version}.tar.gz
 # Source0-md5:	53a432f8849da6bd49b0853dd79551c5
 Source1:	%{name}.conf
+Source2:	%{name}.init
+Source3:	%{name}.service
 Patch0:		nodejs.patch
 URL:		http://netdata.firehol.org/
 BuildRequires:	autoconf
@@ -19,18 +20,22 @@ BuildRequires:	automake
 %{?with_nfacct:BuildRequires:	libmnl-devel}
 %{?with_nfacct:BuildRequires:	libnetfilter_acct-devel}
 BuildRequires:	pkgconfig
-BuildRequires:	rpmbuild(macros) >= 1.202
+BuildRequires:	rpmbuild(macros) >= 1.647
 BuildRequires:	zlib-devel
-Suggests:	%{name}-charts
-Suggests:	%{name}-nodejs
 Provides:	group(netdata)
 Provides:	user(netdata)
+Requires(post,preun):	/sbin/chkconfig
+Requires(post,preun,postun):	systemd-units >= 38
 Requires(postun):	/usr/sbin/groupdel
 Requires(postun):	/usr/sbin/userdel
 Requires(pre):	/bin/id
 Requires(pre):	/usr/bin/getgid
 Requires(pre):	/usr/sbin/groupadd
 Requires(pre):	/usr/sbin/useradd
+Requires:	rc-scripts
+Requires:	systemd-units >= 0.38
+Suggests:	%{name}-charts
+Suggests:	%{name}-nodejs
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
 %define		_libexecdir	%{_prefix}/lib
@@ -105,42 +110,49 @@ rm -rf $RPM_BUILD_ROOT
 %{__make} install \
 	DESTDIR=$RPM_BUILD_ROOT
 
+install -d $RPM_BUILD_ROOT{/etc/rc.d/init.d,%{systemdunitdir}}
+
 cp -p %{SOURCE1} $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/%{name}.conf
+install -p %{SOURCE2} $RPM_BUILD_ROOT/etc/rc.d/init.d/%{name}
+cp -p %{SOURCE3} $RPM_BUILD_ROOT%{systemdunitdir}/%{name}.service
 
 %{__rm} $RPM_BUILD_ROOT/var/{cache,log}/netdata/.keep
 
 install -d $RPM_BUILD_ROOT%{systemdunitdir}
 cp -p system/netdata-systemd $RPM_BUILD_ROOT%{systemdunitdir}/netdata.service
 
+%clean
+rm -rf $RPM_BUILD_ROOT
+
 %pre
 %groupadd -g 329 netdata
 %useradd -u 329 -g netdata -c netdata -s /sbin/nologin -d / netdata
+
+%post
+/sbin/chkconfig --add netdata
+%service netdata restart
+%systemd_post netdata.service
+
+%preun
+if [ "$1" = "0" ]; then
+	%service -q netdata stop
+	/sbin/chkconfig --del netdata
+fi
+%systemd_preun netdata.service
 
 %postun
 if [ "$1" = "0" ]; then
 	%userremove netdata
 	%groupremove netdata
 fi
-
-%if 0
-%post
-%systemd_post netdata.service
-
-%preun
-%systemd_preun netdata.service
-
-%postun
-%systemd_postun_with_restart netdata.service
-%endif
-
-%clean
-rm -rf $RPM_BUILD_ROOT
+%systemd_reload
 
 %files
 %defattr(644,root,root,755)
 %dir %{_sysconfdir}/%{name}
 %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/apps_groups.conf
 %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/netdata.conf
+%attr(754,root,root) /etc/rc.d/init.d/netdata
 %attr(755,root,root) %{_sbindir}/%{name}
 %{_datadir}/%{name}
 %dir %{_libexecdir}/%{name}

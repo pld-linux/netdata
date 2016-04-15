@@ -1,0 +1,98 @@
+#!/bin/sh
+#
+# netdata	Real-time charts for system monitoring
+# chkconfig:	345 99 01
+# description:  Netdata is a daemon that collects data in realtime (per second)
+#               and presents a web site to view and analyze them. The presentation
+#               is also real-time and full of interactive charts that precisely
+#               render all collected values.
+# processname:	netdata
+#
+
+# Source function library
+. /etc/rc.d/init.d/functions
+
+# Get network config
+. /etc/sysconfig/network
+
+# Check that networking is up.
+if is_yes "${NETWORKING}"; then
+	if [ ! -f /var/lock/subsys/network -a "$1" != stop -a "$1" != status ]; then
+		msg_network_down "Netdata Daemon"
+		exit 1
+	fi
+else
+	exit 0
+fi
+
+# Set defaults
+PIDFILE=/var/run/netdata/netdata.pid
+
+# Get service config - may override defaults
+[ -f /etc/sysconfig/netdata ] && . /etc/sysconfig/netdata
+
+start() {
+	# Check if the service is already running?
+	if [ -f /var/lock/subsys/netdata ]; then
+		msg_already_running "Netdata Daemon"
+		return
+	fi
+
+	msg_starting "Netdata Daemon"
+	daemon /usr/sbin/netdata
+	RETVAL=$?
+	[ $RETVAL -eq 0 ] && touch /var/lock/subsys/netdata
+}
+
+stop() {
+	if [ ! -f /var/lock/subsys/netdata ]; then
+		msg_not_running "Netdata Daemon"
+		return
+	fi
+
+	# Stop daemons.
+	msg_stopping "Netdata Daemon"
+	killproc --pidfile $PIDFILE netdata -TERM
+	rm -f /var/lock/subsys/netdata
+}
+
+condrestart() {
+	if [ ! -f /var/lock/subsys/netdata ]; then
+		msg_not_running "Netdata Daemon"
+		RETVAL=$1
+		return
+	fi
+
+	stop
+	start
+}
+
+RETVAL=0
+# See how we were called.
+case "$1" in
+  start)
+	start
+	;;
+  stop)
+	stop
+	;;
+  restart)
+	stop
+	start
+	;;
+  try-restart)
+	condrestart 0
+	;;
+  force-reload)
+	condrestart 7
+	;;
+  status)
+	status --pidfile $PIDFILE netdata
+	RETVAL=$?
+	;;
+  *)
+	msg_usage "$0 {start|stop|restart|try-restart|force-reload|status}"
+	exit 3
+esac
+
+exit $RETVAL
