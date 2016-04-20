@@ -4,12 +4,12 @@
 
 Summary:	Linux real time system monitoring, over the web
 Name:		netdata
-Version:	1.0.0
-Release:	0.15
+Version:	1.1.0
+Release:	1
 License:	GPL v3+
 Group:		Applications/System
 Source0:	https://github.com/firehol/netdata/archive/v%{version}/%{name}-%{version}.tar.gz
-# Source0-md5:	53a432f8849da6bd49b0853dd79551c5
+# Source0-md5:	8ffb7e1a8ada8064eee76d94b0985714
 Source1:	%{name}.conf
 Source2:	%{name}.init
 Source3:	%{name}.service
@@ -110,16 +110,12 @@ rm -rf $RPM_BUILD_ROOT
 %{__make} install \
 	DESTDIR=$RPM_BUILD_ROOT
 
-install -d $RPM_BUILD_ROOT{/etc/rc.d/init.d,%{systemdunitdir}}
+%{__rm} $RPM_BUILD_ROOT/var/{cache,log}/netdata/.keep
 
+install -d $RPM_BUILD_ROOT{/etc/rc.d/init.d,%{systemdunitdir}}
 cp -p %{SOURCE1} $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/%{name}.conf
 install -p %{SOURCE2} $RPM_BUILD_ROOT/etc/rc.d/init.d/%{name}
 cp -p %{SOURCE3} $RPM_BUILD_ROOT%{systemdunitdir}/%{name}.service
-
-%{__rm} $RPM_BUILD_ROOT/var/{cache,log}/netdata/.keep
-
-install -d $RPM_BUILD_ROOT%{systemdunitdir}
-cp -p system/netdata-systemd $RPM_BUILD_ROOT%{systemdunitdir}/netdata.service
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -154,7 +150,7 @@ fi
 %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/netdata.conf
 %attr(754,root,root) /etc/rc.d/init.d/netdata
 %attr(755,root,root) %{_sbindir}/%{name}
-%{_datadir}/%{name}
+%dir %{_datadir}/%{name}
 %dir %{_libexecdir}/%{name}
 %{systemdunitdir}/netdata.service
 %attr(755,netdata,netdata) %dir %{_localstatedir}/cache/%{name}
@@ -165,6 +161,9 @@ fi
 # subpackages
 %exclude %{_libexecdir}/%{name}/plugins.d/node.d.plugin
 %exclude %{_libexecdir}/%{name}/plugins.d/charts.d*
+
+%defattr(-,root,netdata,-)
+%{_datadir}/%{name}/web
 
 %files charts
 %defattr(644,root,root,755)

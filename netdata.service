@@ -1,5 +1,5 @@
 [Unit]
-Description=netdata
+Description=Linux real time system monitoring, over the web
 After=network.target httpd.service squid.service nfs-server.service mysqld.service named.service postfix.service
 
 [Service]
@@ -8,7 +8,7 @@ WorkingDirectory=/tmp
 User=root
 Group=root
 PIDFile=/var/run/netdata/netdata.pid
-ExecStart=/usr/sbin/netdata
+ExecStart=/usr/sbin/netdata -pidfile /var/run/netdata/netdata.pid
 ExecStop=/bin/kill -SIGTERM $MAINPID
 TimeoutStopSec=30
 
