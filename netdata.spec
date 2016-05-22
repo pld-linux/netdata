@@ -2,14 +2,14 @@
 # Conditional build:
 %bcond_with	nfacct		# build with nfacct plugin
 
-Summary:	Linux real time system monitoring, over the web
+Summary:	Linux real time performance monitoring
 Name:		netdata
-Version:	1.1.0
+Version:	1.2.0
 Release:	1
 License:	GPL v3+
 Group:		Applications/System
-Source0:	https://github.com/firehol/netdata/archive/v%{version}/%{name}-%{version}.tar.gz
-# Source0-md5:	8ffb7e1a8ada8064eee76d94b0985714
+Source0:	https://github.com/firehol/netdata/releases/download/v%{version}/%{name}-%{version}.tar.xz
+# Source0-md5:	c23fd94e899e8934c47b14151043be27
 Source1:	%{name}.conf
 Source2:	%{name}.init
 Source3:	%{name}.service
@@ -33,7 +33,6 @@ Requires(pre):	/usr/bin/getgid
 Requires(pre):	/usr/sbin/groupadd
 Requires(pre):	/usr/sbin/useradd
 Requires:	rc-scripts
-Requires:	systemd-units >= 0.38
 Suggests:	%{name}-charts
 Suggests:	%{name}-nodejs
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
