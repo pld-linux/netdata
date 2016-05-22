@@ -110,7 +110,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %{__rm} $RPM_BUILD_ROOT/var/{cache,log}/netdata/.keep
 
-install -d $RPM_BUILD_ROOT{/etc/rc.d/init.d,%{systemdunitdir}}
+install -d $RPM_BUILD_ROOT{/etc/rc.d/init.d,%{systemdunitdir},%{_localstatedir}/lib/%{name}/registry}
 cp -p %{SOURCE1} $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/%{name}.conf
 install -p %{SOURCE2} $RPM_BUILD_ROOT/etc/rc.d/init.d/%{name}
 cp -p system/netdata.service $RPM_BUILD_ROOT%{systemdunitdir}/%{name}.service
@@ -153,6 +153,8 @@ fi
 %{systemdunitdir}/netdata.service
 %attr(755,netdata,netdata) %dir %{_localstatedir}/cache/%{name}
 %attr(755,netdata,netdata) %dir %{_localstatedir}/log/%{name}
+%attr(755,netdata,netdata) %dir %{_localstatedir}/lib/%{name}
+%attr(755,netdata,netdata) %dir %{_localstatedir}/lib/%{name}/registry
 
 %defattr(-,root,root,-)
 %{_libexecdir}/%{name}/plugins.d
