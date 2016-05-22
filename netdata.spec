@@ -12,7 +12,6 @@ Source0:	https://github.com/firehol/netdata/releases/download/v%{version}/%{name
 # Source0-md5:	c23fd94e899e8934c47b14151043be27
 Source1:	%{name}.conf
 Source2:	%{name}.init
-Source3:	%{name}.service
 Patch0:		nodejs.patch
 URL:		http://netdata.firehol.org/
 BuildRequires:	autoconf
@@ -114,7 +113,7 @@ rm -rf $RPM_BUILD_ROOT
 install -d $RPM_BUILD_ROOT{/etc/rc.d/init.d,%{systemdunitdir}}
 cp -p %{SOURCE1} $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/%{name}.conf
 install -p %{SOURCE2} $RPM_BUILD_ROOT/etc/rc.d/init.d/%{name}
-cp -p %{SOURCE3} $RPM_BUILD_ROOT%{systemdunitdir}/%{name}.service
+cp -p system/netdata.service $RPM_BUILD_ROOT%{systemdunitdir}/%{name}.service
 
 %clean
 rm -rf $RPM_BUILD_ROOT
