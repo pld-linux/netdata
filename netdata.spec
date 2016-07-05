@@ -18,6 +18,7 @@ BuildRequires:	autoconf
 BuildRequires:	automake
 %{?with_nfacct:BuildRequires:	libmnl-devel}
 %{?with_nfacct:BuildRequires:	libnetfilter_acct-devel}
+BuildRequires:	libuuid-devel
 BuildRequires:	pkgconfig
 BuildRequires:	rpmbuild(macros) >= 1.647
 BuildRequires:	zlib-devel
