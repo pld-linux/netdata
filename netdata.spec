@@ -1,6 +1,6 @@
 #
 # Conditional build:
-%bcond_with	nfacct		# build with nfacct plugin
+%bcond_without	nfacct		# build with nfacct plugin
 
 Summary:	Linux real time performance monitoring
 Name:		netdata
