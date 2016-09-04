@@ -4,12 +4,12 @@
 
 Summary:	Linux real time performance monitoring
 Name:		netdata
-Version:	1.2.0
-Release:	1
+Version:	1.3.0
+Release:	0.1
 License:	GPL v3+
 Group:		Applications/System
 Source0:	https://github.com/firehol/netdata/releases/download/v%{version}/%{name}-%{version}.tar.xz
-# Source0-md5:	c23fd94e899e8934c47b14151043be27
+# Source0-md5:	f2854aa2e127a1c9f86366f17524c382
 Source1:	%{name}.conf
 Source2:	%{name}.init
 Patch0:		nodejs.patch
@@ -35,6 +35,7 @@ Requires(pre):	/usr/sbin/useradd
 Requires:	rc-scripts
 Suggests:	%{name}-charts
 Suggests:	%{name}-nodejs
+Suggests:	%{name}-python
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
 %define		_libexecdir	%{_prefix}/lib
@@ -87,6 +88,18 @@ also manages all its data collectors (placed in node.d) using a single
 instance of node, thus lowering the memory footprint of data
 collection.
 
+%package python
+Summary:	netdata Python plugins
+Group:		Applications/System
+URL:		https://github.com/firehol/netdata/wiki/How-to-write-new-module
+Requires:	%{name} = %{version}-%{release}
+%if "%{_rpmversion}" >= "5"
+BuildArch:	noarch
+%endif
+
+%description python
+Netdata Python plugins.
+
 %prep
 %setup -q
 %patch0 -p1
@@ -109,7 +122,8 @@ rm -rf $RPM_BUILD_ROOT
 %{__make} install \
 	DESTDIR=$RPM_BUILD_ROOT
 
-%{__rm} $RPM_BUILD_ROOT/var/{cache,log}/netdata/.keep
+%{__rm} $RPM_BUILD_ROOT/var/{cache,lib,log}/netdata/.keep
+%{__rm} $RPM_BUILD_ROOT/var/lib/netdata/registry/.keep
 
 install -d $RPM_BUILD_ROOT{/etc/rc.d/init.d,%{systemdunitdir},%{_localstatedir}/lib/%{name}/registry}
 cp -p %{SOURCE1} $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/%{name}.conf
@@ -147,6 +161,8 @@ fi
 %dir %{_sysconfdir}/%{name}
 %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/apps_groups.conf
 %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/netdata.conf
+%dir %{_sysconfdir}/%{name}/health.d
+%config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/health.d/*.conf
 %attr(754,root,root) /etc/rc.d/init.d/netdata
 %attr(755,root,root) %{_sbindir}/%{name}
 %dir %{_datadir}/%{name}
@@ -181,3 +197,19 @@ fi
 %{_libexecdir}/%{name}/node.d/README.md
 %{_libexecdir}/%{name}/node.d/node_modules
 %attr(755,root,root) %{_libexecdir}/%{name}/node.d/*.node.js
+
+%files python
+%defattr(644,root,root,755)
+%dir %{_sysconfdir}/%{name}/python.d
+%config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/python.d.conf
+%config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/python.d/*.conf
+%dir %{_libexecdir}/%{name}/python.d
+%{_libexecdir}/%{name}/python.d/README.md
+%attr(755,root,root) %{_libexecdir}/%{name}/python.d/*.chart.py
+
+# XXX system packages
+%{_libexecdir}/%{name}/python.d/python-modules-installer.sh
+%dir %{_libexecdir}/%{name}/python.d/python_modules
+%{_libexecdir}/%{name}/python.d/python_modules/*.py
+%{_libexecdir}/%{name}/python.d/python_modules/pyyaml2
+%{_libexecdir}/%{name}/python.d/python_modules/pyyaml3
