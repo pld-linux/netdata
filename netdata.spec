@@ -4,12 +4,12 @@
 
 Summary:	Linux real time performance monitoring
 Name:		netdata
-Version:	1.3.0
-Release:	0.1
+Version:	1.6.0
+Release:	1
 License:	GPL v3+
 Group:		Applications/System
 Source0:	https://github.com/firehol/netdata/releases/download/v%{version}/%{name}-%{version}.tar.xz
-# Source0-md5:	f2854aa2e127a1c9f86366f17524c382
+# Source0-md5:	7a33f146702ebb29cc9518b33ec911a0
 Source1:	%{name}.conf
 Source2:	%{name}.init
 Patch0:		nodejs.patch
@@ -161,6 +161,10 @@ fi
 %dir %{_sysconfdir}/%{name}
 %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/apps_groups.conf
 %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/netdata.conf
+%config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/fping.conf
+%config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/health_alarm_notify.conf
+%config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/health_email_recipients.conf
+%config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/stream.conf
 %dir %{_sysconfdir}/%{name}/health.d
 %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/health.d/*.conf
 %attr(754,root,root) /etc/rc.d/init.d/netdata
@@ -185,6 +189,8 @@ fi
 %files charts
 %defattr(644,root,root,755)
 %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/charts.d.conf
+%dir %{_sysconfdir}/%{name}/charts.d
+%config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/charts.d/*.conf
 %attr(755,root,root) %{_libexecdir}/%{name}/plugins.d/charts.d*
 %dir %{_libexecdir}/%{name}/charts.d
 %{_libexecdir}/%{name}/charts.d/README.md
@@ -192,6 +198,8 @@ fi
 
 %files nodejs
 %defattr(644,root,root,755)
+%config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/node.d.conf
+%dir %{_sysconfdir}/%{name}/node.d
 %attr(755,root,root) %{_libexecdir}/%{name}/plugins.d/node.d.plugin
 %dir %{_libexecdir}/%{name}/node.d
 %{_libexecdir}/%{name}/node.d/README.md
