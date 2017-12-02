@@ -1,24 +1,26 @@
 #
 # Conditional build:
-%bcond_without	nfacct		# build with nfacct plugin
+%bcond_without	freeipmi	# freeipmi plugin
+%bcond_without	nfacct		# nfacct plugin
 
 Summary:	Linux real time performance monitoring
 Summary(pl.UTF-8):	Monitorowanie wydajności Linuksa w czasie rzeczywistym
 Name:		netdata
-Version:	1.6.0
+Version:	1.8.0
 Release:	1
 License:	GPL v3+
 Group:		Applications/System
 #Source0Download: https://github.com/firehol/netdata/releases
 Source0:	https://github.com/firehol/netdata/releases/download/v%{version}/%{name}-%{version}.tar.xz
-# Source0-md5:	7a33f146702ebb29cc9518b33ec911a0
+# Source0-md5:	4058c3acdda1af5968e7dc636ba322e2
 Source1:	%{name}.conf
 Source2:	%{name}.init
 Patch0:		nodejs.patch
 URL:		http://netdata.firehol.org/
-BuildRequires:	autoconf
+BuildRequires:	autoconf >= 2.60
 BuildRequires:	automake
-BuildRequires:	freeipmi-devel
+%{?with_freeipmi:BuildRequires:	freeipmi-devel}
+BuildRequires:	libcap-devel
 %{?with_nfacct:BuildRequires:	libmnl-devel}
 %{?with_nfacct:BuildRequires:	libnetfilter_acct-devel}
 BuildRequires:	libuuid-devel
@@ -145,9 +147,10 @@ Wtyczki Pythona dla netdata.
 %{__automake}
 %configure \
 	--libdir=%{_libexecdir} \
-	--with-zlib \
-	--with-math \
+	%{__enable_disable freeipmi plugin-freeipmi} \
 	%{__enable_disable nfacct plugin-nfacct} \
+	--with-math \
+	--with-zlib \
 	--with-user=netdata
 %{__make}
 
@@ -192,6 +195,7 @@ fi
 
 %files
 %defattr(644,root,root,755)
+%doc ChangeLog LICENSE.md LICENSE-REDISTRIBUTED.md README.md
 %dir %{_sysconfdir}/%{name}
 %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/apps_groups.conf
 %config(noreplace) %verify(not md5 mtime size) %{_sysconfdir}/%{name}/netdata.conf
@@ -255,3 +259,4 @@ fi
 %{_libexecdir}/%{name}/python.d/python_modules/*.py
 %{_libexecdir}/%{name}/python.d/python_modules/pyyaml2
 %{_libexecdir}/%{name}/python.d/python_modules/pyyaml3
+%{_libexecdir}/%{name}/python.d/python_modules/urllib3

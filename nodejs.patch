@@ -1,5 +1,5 @@
---- netdata-1.6.0/plugins.d/node.d.plugin.orig	2017-04-17 17:56:37.618423579 +0200
-+++ netdata-1.6.0/plugins.d/node.d.plugin	2017-04-17 17:57:47.213302270 +0200
+--- netdata-1.8.0/plugins.d/node.d.plugin.orig	2017-12-02 09:30:52.141653204 +0100
++++ netdata-1.8.0/plugins.d/node.d.plugin	2017-12-02 09:36:15.688316178 +0100
 @@ -1,12 +1,5 @@
 -#!/usr/bin/env bash
 -':' //; exec "$(command -v nodejs || command -v node || command -v js || echo "ERROR node.js IS NOT AVAILABLE IN THIS SYSTEM")" "$0" "$@"
@@ -7,7 +7,7 @@
 -// shebang hack from:
 -// http://unix.stackexchange.com/questions/65235/universal-node-js-shebang
 -
--// Initially this is run as a shell script (#!/bin/sh).
+-// Initially this is run as a shell script.
 -// Then, the second line, finds nodejs or node or js in the system path
 -// and executes it with the shell parameters.
 +#!/usr/bin/node
