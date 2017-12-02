@@ -3,11 +3,13 @@
 %bcond_without	nfacct		# build with nfacct plugin
 
 Summary:	Linux real time performance monitoring
+Summary(pl.UTF-8):	Monitorowanie wydajności Linuksa w czasie rzeczywistym
 Name:		netdata
 Version:	1.6.0
 Release:	1
 License:	GPL v3+
 Group:		Applications/System
+#Source0Download: https://github.com/firehol/netdata/releases
 Source0:	https://github.com/firehol/netdata/releases/download/v%{version}/%{name}-%{version}.tar.xz
 # Source0-md5:	7a33f146702ebb29cc9518b33ec911a0
 Source1:	%{name}.conf
@@ -16,6 +18,7 @@ Patch0:		nodejs.patch
 URL:		http://netdata.firehol.org/
 BuildRequires:	autoconf
 BuildRequires:	automake
+BuildRequires:	freeipmi-devel
 %{?with_nfacct:BuildRequires:	libmnl-devel}
 %{?with_nfacct:BuildRequires:	libnetfilter_acct-devel}
 BuildRequires:	libuuid-devel
@@ -50,8 +53,16 @@ netdata tries to visualize the truth of now, in its greatest detail,
 so that you can get insights of what is happening now and what just
 happened, on your systems and applications.
 
+%description -l pl.UTF-8
+netdata to najszybszy sposób wizualizacji metryk. Jest to wydajny pod
+względem zużycia zasobów, znacząco zoptymalizowany system do zbierania
+i wizualizacji dowolnego rodzaju danych zbieranych w linii czasu
+rzeczywistego - np. wykorzystania CPU, aktywności dysku, zapytań SQL,
+wywołań API, odwiedzających stronę WWW.
+
 %package charts
 Summary:	netdata charts plugin
+Summary(pl.UTF-8):	Wtyczka do wykresów dla netdata
 Group:		Applications/System
 URL:		https://github.com/firehol/netdata/wiki/General-Info---charts.d
 Requires:	%{name} = %{version}-%{release}
@@ -72,8 +83,20 @@ values with minimal overhead).
 Charts.d looks for scripts in charts.d. The scripts should have the
 filename suffix: .chart.sh.
 
+%description charts -l pl.UTF-8
+Charts.d to skrypt Basha pozwalający na pisanie prostych skryptów do
+zbierania danych.
+
+Jest zaprojektowany tak, że właściwy skrypt zbierający dane jest
+trzymany cały czas w pamięci, zbierając dane z możliwie małym narzutem
+(z pojedynczą inicjacją, regularnie zbierając wartości).
+
+Charts.d wyszukuje skrypty w katalogu charts.d. Skrypty powinny mieć
+rozszerzenie nazwy pliku: .chart.sh.
+
 %package nodejs
 Summary:	netdata node.js plugins
+Summary(pl.UTF-8):	Wtyczki node.js dla netdata
 Group:		Applications/System
 URL:		https://github.com/firehol/netdata/wiki/General-Info---node.d
 Requires:	%{name} = %{version}-%{release}
@@ -88,8 +111,16 @@ also manages all its data collectors (placed in node.d) using a single
 instance of node, thus lowering the memory footprint of data
 collection.
 
+%description nodejs -l pl.UTF-8
+Wtyczka node.d zapewnia warstwę abstrakcji, pozwalającą na łatwe i
+szybkie tworzenie modułów zbierających dane w node.js. Zarządza też
+wszystkimi modułami zbierającymi dane (umieszczonymi w node.d) przy
+użyciu prostej instancji węzła, obniżając narzut pamięciowy zbierania
+danych.
+
 %package python
 Summary:	netdata Python plugins
+Summary(pl.UTF-8):	Wtyczki Pythona dla netdata
 Group:		Applications/System
 URL:		https://github.com/firehol/netdata/wiki/How-to-write-new-module
 Requires:	%{name} = %{version}-%{release}
@@ -99,6 +130,9 @@ BuildArch:	noarch
 
 %description python
 Netdata Python plugins.
+
+%description python -l pl.UTF-8
+Wtyczki Pythona dla netdata.
 
 %prep
 %setup -q
