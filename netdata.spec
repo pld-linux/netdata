@@ -69,9 +69,7 @@ Group:		Applications/System
 URL:		https://github.com/firehol/netdata/wiki/General-Info---charts.d
 Requires:	%{name} = %{version}-%{release}
 Requires:	bash >= 4
-%if "%{_rpmversion}" >= "5"
 BuildArch:	noarch
-%endif
 
 %description charts
 Charts.d is BaSH script that allows you to write simple scripts for
@@ -102,9 +100,7 @@ Summary(pl.UTF-8):	Wtyczki node.js dla netdata
 Group:		Applications/System
 URL:		https://github.com/firehol/netdata/wiki/General-Info---node.d
 Requires:	%{name} = %{version}-%{release}
-%if "%{_rpmversion}" >= "5"
 BuildArch:	noarch
-%endif
 
 %description nodejs
 node.d.plugin is a netdata plugin that provides an abstraction layer
@@ -126,9 +122,7 @@ Summary(pl.UTF-8):	Wtyczki Pythona dla netdata
 Group:		Applications/System
 URL:		https://github.com/firehol/netdata/wiki/How-to-write-new-module
 Requires:	%{name} = %{version}-%{release}
-%if "%{_rpmversion}" >= "5"
 BuildArch:	noarch
-%endif
 
 %description python
 Netdata Python plugins.
