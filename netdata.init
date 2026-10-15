@@ -39,7 +39,7 @@ start() {
 	fi
 
 	msg_starting "Netdata Daemon"
-	daemon /usr/sbin/netdata
+	daemon /usr/sbin/netdata -P $PIDFILE
 	RETVAL=$?
 	[ $RETVAL -eq 0 ] && touch /var/lock/subsys/netdata
 }

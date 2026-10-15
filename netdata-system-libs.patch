@@ -1,0 +1,273 @@
+Link against system SQLite, Judy, libsensors and libbacktrace instead of the
+copies upstream downloads at build time (SQLite, libbacktrace) or bundles
+(Judy, libsensors); SQLite's recover extension is not part of libsqlite3 and
+is built from NETDATA_SQLITE_RECOVER_SOURCE_DIR.
+Based on https://distfiles.gentoo.org/pub/dev/arthurzam@gentoo.org/net-analyzer/netdata/netdata-2.11.1-system-libs.patch.xz
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -2499,29 +2499,9 @@ set(PROMETHEUS_REMOTE_WRITE_EXPORTING_FILES
+ # build libjudy
+ #
+ 
+-add_library(judy STATIC ${LIBJUDY_SOURCES})
+-
+-target_compile_options(judy PRIVATE
+-        -Wno-all -Wno-extra
+-        -Wno-shadow
+-        -Wformat
+-)
+-
+-target_compile_definitions(judy PRIVATE
+-        JUDYL
+-        $<$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>:JU_64BIT>
+-)
+-
+-target_include_directories(judy PUBLIC
+-        src/libnetdata/libjudy/vendored
+-        src/libnetdata/libjudy/vendored/JudyCommon
+-)
+-
+-set_source_files_properties(${LIBJUDY_PREV_FILES} PROPERTIES COMPILE_OPTIONS "-DJUDYPREV")
+-set_source_files_properties(${LIBJUDY_NEXT_FILES} PROPERTIES COMPILE_OPTIONS "-DJUDYNEXT")
+-set_source_files_properties(src/libnetdata/libjudy/vendored/JudyL/j__udyLGet.c PROPERTIES COMPILE_OPTIONS "-DJUDYGETINLINE")
+-set_source_files_properties(src/libnetdata/libjudy/vendored/JudyL/JudyLByCount.c PROPERTIES COMPILE_OPTIONS "-DNOSMARTJBB -DNOSMARTJBU -DNOSMARTJLB")
+-set_source_files_properties(JudyLTables.c PROPERTIES COMPILE_OPTIONS "-I${CMAKE_SOURCE_DIR}/src/libnetdata/libjudy/src/JudyL")
++# use system libJudy (JudyMalloc/JudyFree are still interposed by libnetdata)
++find_path(JUDY_INCLUDE_DIR Judy.h REQUIRED)
++find_library(JUDY_LIBRARY Judy REQUIRED)
+ 
+ set(NETIPC_PROTOCOL_FILES
+         src/libnetdata/netipc/src/protocol/netipc_protocol.c
+@@ -2729,7 +2709,8 @@ if(OS_WINDOWS)
+ endif()
+ 
+ # judy
+-target_link_libraries(libnetdata PUBLIC judy)
++target_include_directories(libnetdata PUBLIC ${JUDY_INCLUDE_DIR})
++target_link_libraries(libnetdata PUBLIC ${JUDY_LIBRARY})
+ 
+ netdata_add_jsonc_to_target(libnetdata)
+ 
+@@ -2923,17 +2904,11 @@ if(ENABLE_PLUGIN_DEBUGFS)
+     # Add executable for debugfs.plugin
+     add_executable(debugfs.plugin ${DEBUGFS_PLUGIN_FILES})
+ 
+-    # Add vendored libsensors library
+-    add_subdirectory(src/collectors/debugfs.plugin/libsensors)
+-
+-    # Link debugfs.plugin with vendored libsensors
+-    target_link_libraries(debugfs.plugin PRIVATE vendored_libsensors)
+-
+-    # Include vendored libsensors headers
+-    target_include_directories(debugfs.plugin PRIVATE
+-            src/collectors/debugfs.plugin/libsensors/vendored/lib
+-            ${CMAKE_CURRENT_BINARY_DIR}/src/collectors/debugfs.plugin/libsensors # For generated headers
+-    )
++    # use system libsensors
++    find_path(SENSORS_INCLUDE_DIR sensors/sensors.h REQUIRED)
++    find_library(SENSORS_LIBRARY sensors REQUIRED)
++    target_link_libraries(debugfs.plugin PRIVATE ${SENSORS_LIBRARY})
++    target_include_directories(debugfs.plugin PRIVATE ${SENSORS_INCLUDE_DIR})
+ 
+     # Link against libnetdata and optionally libcap
+     target_link_libraries(debugfs.plugin PRIVATE libnetdata ${CAP_LIBRARIES})
+diff --git a/packaging/cmake/Modules/NetdataBacktrace.cmake b/packaging/cmake/Modules/NetdataBacktrace.cmake
+--- a/packaging/cmake/Modules/NetdataBacktrace.cmake
++++ b/packaging/cmake/Modules/NetdataBacktrace.cmake
+@@ -1,52 +1,19 @@
+ # SPDX-License-Identifier: GPL-3.0-or-later
+ # Functions and macros for handling of libbacktrace
+ #
+-# Handle bundling of libbacktrace.
++# Use system libbacktrace.
+ #
+-# This clones and builds libbacktrace using ExternalProject functionality.
+-
+-include(ExternalProject)
+ 
+ function(netdata_bundle_libbacktrace)
+-        message(STATUS "Preparing libbacktrace")
+-
+-        set(libbacktrace_SOURCE_DIR "${CMAKE_BINARY_DIR}/libbacktrace-src")
+-        set(libbacktrace_BINARY_DIR "${CMAKE_BINARY_DIR}/libbacktrace-build")
+-        set(libbacktrace_INSTALL_DIR "${CMAKE_BINARY_DIR}/libbacktrace-install")
+-        set(libbacktrace_LIBRARY "${libbacktrace_INSTALL_DIR}/lib/libbacktrace.a")
+-
+-        # Clone and build libbacktrace
+-        ExternalProject_Add(
+-                libbacktrace
+-                GIT_REPOSITORY https://github.com/ianlancetaylor/libbacktrace.git
+-                SOURCE_DIR "${libbacktrace_SOURCE_DIR}"
+-                BINARY_DIR "${libbacktrace_BINARY_DIR}"
+-                CONFIGURE_COMMAND "${libbacktrace_SOURCE_DIR}/configure" --prefix=${libbacktrace_INSTALL_DIR} --enable-static
+-                BUILD_COMMAND make install
+-                INSTALL_COMMAND ""
+-                BUILD_BYPRODUCTS "${libbacktrace_LIBRARY}"
+-                EXCLUDE_FROM_ALL 1
+-                UPDATE_DISCONNECTED ON
+-        )
++        find_path(LIBBACKTRACE_INCLUDE_DIR backtrace.h REQUIRED)
++        find_library(LIBBACKTRACE_LIBRARY backtrace REQUIRED)
+ 
+-        # Create an imported library target
+-        add_library(libbacktrace_library STATIC IMPORTED GLOBAL)
+-        set_property(
+-                TARGET libbacktrace_library
+-                PROPERTY IMPORTED_LOCATION "${libbacktrace_LIBRARY}"
+-        )
+-        add_dependencies(libbacktrace_library libbacktrace)
+-
+-        # Export variables to parent scope
+-        set(NETDATA_LIBBACKTRACE_INCLUDE_DIRS "${libbacktrace_INSTALL_DIR}/include" PARENT_SCOPE)
+-        set(NETDATA_LIBBACKTRACE_LIBRARIES libbacktrace_library PARENT_SCOPE)
++        set(NETDATA_LIBBACKTRACE_INCLUDE_DIRS "${LIBBACKTRACE_INCLUDE_DIR}" PARENT_SCOPE)
++        set(NETDATA_LIBBACKTRACE_LIBRARIES "${LIBBACKTRACE_LIBRARY}" PARENT_SCOPE)
+         set(HAVE_LIBBACKTRACE TRUE PARENT_SCOPE)
+-
+-        message(STATUS "Finished preparing libbacktrace")
+ endfunction()
+ 
+ function(netdata_add_libbacktrace_to_target _target)
+         target_include_directories(${_target} BEFORE PUBLIC "${NETDATA_LIBBACKTRACE_INCLUDE_DIRS}")
+         target_link_libraries(${_target} PUBLIC ${NETDATA_LIBBACKTRACE_LIBRARIES})
+-        add_dependencies(${_target} libbacktrace)
+ endfunction()
+diff --git a/packaging/cmake/Modules/NetdataSQLite.cmake b/packaging/cmake/Modules/NetdataSQLite.cmake
+--- a/packaging/cmake/Modules/NetdataSQLite.cmake
++++ b/packaging/cmake/Modules/NetdataSQLite.cmake
+@@ -1,105 +1,30 @@
+ # SPDX-License-Identifier: GPL-3.0-or-later
+ # Functions and macros for handling of SQLite
+ #
+-# Handle bundling of SQLite.
+-#
+-# This fetches the SQLite source tree (via tarball or git clone),
+-# generates the amalgamation at build time (with --enable-update-limit
+-# so the parser supports UPDATE/DELETE ... LIMIT), then compiles it as
+-# a separate static library that links into libnetdata.
+-
+-include(ExternalProject)
+-
+-set(SQLITE_VERSION "3.53.4")
+-set(SQLITE_VERSION_NUMBER "3530400")
+-set(SQLITE_VERSION_YEAR "2026")
+-
+-set(SQLITE_TARBALL_SHA256 "d18fa15aec74d8c17e1463f861095adc01b5ad190256acb4f91d22f0368d232b")
+-set(SQLITE_GIT_SHA "b09c88c14082339b66c7b7158d609a771e64ca69") # tag is: version-${SQLITE_VERSION}
++# Use system SQLite, and only build the recover extension
++# (not part of libsqlite3) from NETDATA_SQLITE_RECOVER_SOURCE_DIR.
+ 
+-option(SQLITE_USE_GIT "Fetch SQLite sources via git clone instead of tarball" OFF)
++set(NETDATA_SQLITE_RECOVER_SOURCE_DIR "" CACHE PATH "Path to SQLite ext/recover sources")
+ 
+ function(netdata_bundle_sqlite3)
+-        message(STATUS "Preparing SQLite ${SQLITE_VERSION}")
++        pkg_check_modules(SQLITE3 REQUIRED sqlite3)
+ 
+-        set(sqlite_SOURCE_DIR "${CMAKE_BINARY_DIR}/sqlite-src")
+-        set(sqlite_BINARY_DIR "${CMAKE_BINARY_DIR}/sqlite-build")
+-        set(sqlite_OUTPUT_DIR "${CMAKE_BINARY_DIR}/sqlite-output")
+-
+-        file(MAKE_DIRECTORY "${sqlite_OUTPUT_DIR}")
+-
+-        if(SQLITE_USE_GIT)
+-                message(STATUS "Fetching SQLite via git clone")
+-                set(SQLITE_FETCH_ARGS
+-                        GIT_REPOSITORY https://github.com/sqlite/sqlite.git
+-                        GIT_TAG "${SQLITE_GIT_SHA}"
+-                )
+-        else()
+-                message(STATUS "Fetching SQLite via tarball")
+-                set(SQLITE_FETCH_ARGS
+-                        URL "https://www.sqlite.org/${SQLITE_VERSION_YEAR}/sqlite-src-${SQLITE_VERSION_NUMBER}.zip"
+-                        URL_HASH "SHA256=${SQLITE_TARBALL_SHA256}"
+-                )
+-        endif()
+-
+-        ExternalProject_Add(
+-                sqlite_project
+-                ${SQLITE_FETCH_ARGS}
+-                SOURCE_DIR "${sqlite_SOURCE_DIR}"
+-                BINARY_DIR "${sqlite_BINARY_DIR}"
+-                CONFIGURE_COMMAND "${sqlite_SOURCE_DIR}/configure" --enable-update-limit
+-                # GNU Make jobserver flags are not understood by FreeBSD make.
+-                BUILD_COMMAND "${CMAKE_COMMAND}" -E env MAKEFLAGS= make sqlite3.c sqlite3.h
+-                INSTALL_COMMAND ${CMAKE_COMMAND} -E copy
+-                        "${sqlite_BINARY_DIR}/sqlite3.c"
+-                        "${sqlite_BINARY_DIR}/sqlite3.h"
+-                        "${sqlite_SOURCE_DIR}/ext/recover/sqlite3recover.c"
+-                        "${sqlite_SOURCE_DIR}/ext/recover/sqlite3recover.h"
+-                        "${sqlite_SOURCE_DIR}/ext/recover/dbdata.c"
+-                        "${sqlite_OUTPUT_DIR}"
+-                BUILD_BYPRODUCTS
+-                        "${sqlite_OUTPUT_DIR}/sqlite3.c"
+-                        "${sqlite_OUTPUT_DIR}/sqlite3.h"
+-                        "${sqlite_OUTPUT_DIR}/sqlite3recover.c"
+-                        "${sqlite_OUTPUT_DIR}/sqlite3recover.h"
+-                        "${sqlite_OUTPUT_DIR}/dbdata.c"
+-                EXCLUDE_FROM_ALL 1
+-                UPDATE_DISCONNECTED ON
++        set(SQLITE_RECOVER_SOURCES
++                "${NETDATA_SQLITE_RECOVER_SOURCE_DIR}/sqlite3recover.c"
++                "${NETDATA_SQLITE_RECOVER_SOURCE_DIR}/dbdata.c"
+         )
+ 
+-        set(SQLITE_SOURCES
+-                "${sqlite_OUTPUT_DIR}/sqlite3.c"
+-                "${sqlite_OUTPUT_DIR}/sqlite3recover.c"
+-                "${sqlite_OUTPUT_DIR}/dbdata.c"
++        add_library(sqlite3recover STATIC ${SQLITE_RECOVER_SOURCES})
++        target_compile_options(sqlite3recover PRIVATE -Wno-unused-parameter ${SQLITE3_CFLAGS_OTHER})
++        target_include_directories(sqlite3recover PUBLIC
++                "${NETDATA_SQLITE_RECOVER_SOURCE_DIR}"
++                ${SQLITE3_INCLUDE_DIRS}
+         )
++        target_link_libraries(sqlite3recover PUBLIC ${SQLITE3_LDFLAGS})
+ 
+-        set_source_files_properties(${SQLITE_SOURCES} PROPERTIES GENERATED TRUE)
+-
+-        add_library(sqlite3 STATIC ${SQLITE_SOURCES})
+-
+-        target_compile_definitions(sqlite3 PRIVATE
+-                SQLITE_ENABLE_UPDATE_DELETE_LIMIT
+-                SQLITE_ENABLE_MEMORY_MANAGEMENT
+-                SQLITE_OMIT_LOAD_EXTENSION
+-                SQLITE_ENABLE_DBSTAT_VTAB
+-                SQLITE_ENABLE_DBPAGE_VTAB
+-        )
+-
+-        target_compile_options(sqlite3 PRIVATE -Wno-unused-parameter)
+-
+-        target_include_directories(sqlite3 PUBLIC "${sqlite_OUTPUT_DIR}")
+-
+-        add_dependencies(sqlite3 sqlite_project)
+-
+-        # Export variables to parent scope
+-        set(NETDATA_SQLITE_INCLUDE_DIRS "${sqlite_OUTPUT_DIR}" PARENT_SCOPE)
+-        set(NETDATA_SQLITE_LIBRARIES sqlite3 PARENT_SCOPE)
+-
+-        message(STATUS "Finished preparing SQLite ${SQLITE_VERSION}")
++        set(NETDATA_SQLITE_LIBRARIES sqlite3recover PARENT_SCOPE)
+ endfunction()
+ 
+ function(netdata_add_sqlite3_to_target _target)
+-        target_include_directories(${_target} BEFORE PUBLIC "${NETDATA_SQLITE_INCLUDE_DIRS}")
+         target_link_libraries(${_target} PUBLIC ${NETDATA_SQLITE_LIBRARIES})
+-        add_dependencies(${_target} sqlite3)
+ endfunction()
+diff --git a/src/collectors/debugfs.plugin/module-libsensors.c b/src/collectors/debugfs.plugin/module-libsensors.c
+--- a/src/collectors/debugfs.plugin/module-libsensors.c
++++ b/src/collectors/debugfs.plugin/module-libsensors.c
+@@ -5,8 +5,8 @@
+ 
+ #define NETDATA_CALCULATED_STATES 1
+ 
+-#include "libsensors/vendored/lib/sensors.h"
+-#include "libsensors/vendored/lib/error.h"
++#include <sensors/sensors.h>
++#include <sensors/error.h>
+ 
+ typedef short SENSOR_BUS_TYPE;
+ ENUM_STR_MAP_DEFINE(SENSOR_BUS_TYPE) = {
